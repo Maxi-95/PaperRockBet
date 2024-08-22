@@ -1,16 +1,27 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RockPaperDuel</title>
-    <link rel="stylesheet" href="styles/styles.css">
-</head>
-<body>
-    <div id="app">
-        <h1>¡Bienvenido a RockPaperDuel!</h1>
-        <!-- Aquí irá el juego -->
-    </div>
-    <script src="scripts/main.js"></script>
-</body>
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>RockPaperDuel</title>
+      <link rel="stylesheet" href="styles/styles.css" />
+   </head>
+   <body>
+      <div id="app">
+         <h1>¡Bienvenido a RockPaperDuel!</h1>
+         <!-- Aquí irá el juego -->
+         <div id="choices">
+            <button class="choice" data-choice="piedra">Piedra</button>
+            <button class="choice" data-choice="papel">Papel</button>
+            <button class="choice" data-choice="tijeras">Tijeras</button>
+         </div>
+         <div id="betting">
+            <label for="player-bet">Ingrese su apuesta: </label>
+            <input type="number" id="player-bet" placeholder="Cantidad en $" />
+            <button id="place-bet">Apostar</button>
+         </div>
+         <div id="result"></div>
+      </div>
+      <script src="scripts/main.js"></script>
+   </body>
 </html>

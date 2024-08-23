@@ -55,3 +55,35 @@ body {
    font-size: 16px;
    cursor: pointer;
 }
+#player-balance {
+   font-size: 20px;
+   font-weight: bold;
+   margin-bottom: 20px;
+}
+
+#betting {
+   margin: 20px 0;
+}
+
+#player-bet {
+   padding: 5px;
+   font-size: 16px;
+   margin-right: 10px;
+   width: 100px;
+}
+
+#place-bet {
+   padding: 5px 15px;
+   font-size: 16px;
+   cursor: pointer;
+}
+
+#reload {
+   margin-top: 20px;
+}
+
+#reload-balance {
+   padding: 5px 15px;
+   font-size: 16px;
+   cursor: pointer;
+}

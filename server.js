@@ -1,43 +1,34 @@
-const http = require("http");
 const WebSocket = require("ws");
 
-const server = http.createServer();
-const wss = new WebSocket.Server({ server });
-
-let players = [];
+const wss = new WebSocket.Server({ port: 8080 });
+let nextPlayerId = 1; // Para asignar IDs únicos a los jugadores
+let clients = {}; // Para almacenar a los jugadores conectados
 
 wss.on("connection", (ws) => {
-   if (players.length < 2) {
-      players.push(ws);
-      ws.send("Esperando a otro jugador...");
-   }
+   const playerId = nextPlayerId++;
+   clients[playerId] = ws;
 
-   if (players.length === 2) {
-      players.forEach((player, index) => {
-         player.send(`Jugador ${index + 1} conectado. Comienza el juego.`);
-      });
+   // Envía al jugador su ID
+   ws.send(JSON.stringify({ playerId }));
 
-      ws.on("message", (message) => {
-         // Enviar el mensaje del jugador al otro jugador
-         players.forEach((player) => {
-            if (player !== ws) {
-               player.send(message);
-            }
-         });
-      });
+   ws.on("message", (message) => {
+      const parsedMessage = JSON.parse(message);
+      const opponentId = Object.keys(clients).find((id) => id != playerId);
 
-      ws.on("close", () => {
-         players = players.filter((player) => player !== ws);
-         players.forEach((player) => {
-            player.send("El otro jugador se ha desconectado.");
-         });
-      });
-   } else {
-      ws.send("Sala completa.");
-      ws.close();
-   }
+      // Reenvía el mensaje al oponente
+      if (opponentId) {
+         clients[opponentId].send(
+            JSON.stringify({
+               playerId: parsedMessage.playerId,
+               choice: parsedMessage.choice,
+            }),
+         );
+      }
+   });
+
+   ws.on("close", () => {
+      delete clients[playerId]; // Elimina al jugador al desconectarse
+   });
 });
 
-server.listen(8080, () => {
-   console.log("Servidor escuchando en el puerto 8080");
-});
+console.log("Servidor WebSocket corriendo en ws://localhost:8080");

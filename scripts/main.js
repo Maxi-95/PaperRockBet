@@ -1,35 +1,73 @@
+let playerChoice = null;
+let opponentChoice = null;
+let playerId = null;
+let playerBalance = 1000; // Saldo inicial del jugador
+const MINIMUM_BALANCE = 10; // Saldo mínimo requerido para jugar
+const MINIMUM_BET = 250; // Apuesta mínima permitida
+const RELOAD_AMOUNT = 500; // Cantidad para recargar el saldo
+
+// Funciones auxiliares
+
+// Función para determinar el resultado del juego
+function playGame(player1Choice, player2Choice) {
+   if (player1Choice === player2Choice) {
+      return "¡Empate!";
+   }
+   if (
+      (player1Choice === "piedra" && player2Choice === "tijeras") ||
+      (player1Choice === "papel" && player2Choice === "piedra") ||
+      (player1Choice === "tijeras" && player2Choice === "papel")
+   ) {
+      return "¡Jugador 1 gana!";
+   } else {
+      return "¡Jugador 2 gana!";
+   }
+}
+
+// Función para actualizar el saldo del jugador
+function updateBalance() {
+   const balanceDiv = document.getElementById("player-balance");
+   balanceDiv.textContent = `Saldo: $${playerBalance}`;
+}
+
+// Función para reiniciar el juego
+function resetGame() {
+   playerChoice = null;
+   opponentChoice = null;
+   playerBet = 0;
+   document.getElementById("player-bet").value = "";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
    const socket = new WebSocket("ws://localhost:8080");
 
+   // Variables y elementos del DOM
    let playerBet = 0;
-   let playerBalance = 1000;
-   const MINIMUM_BET = 250;
-
    const balanceDiv = document.getElementById("player-balance");
+   const buttons = document.querySelectorAll(".choice");
    const resultDiv = document.getElementById("result");
    const betInput = document.getElementById("player-bet");
    const placeBetButton = document.getElementById("place-bet");
    const reloadBalanceButton = document.getElementById("reload-balance");
-   const buttons = document.querySelectorAll(".choice");
 
+   // Actualiza el saldo mostrado
    function updateBalance() {
       balanceDiv.textContent = `Saldo: $${playerBalance}`;
+      checkBettingAbility();
    }
 
-   function playGame(player1Choice, player2Choice) {
-      if (player1Choice === player2Choice) {
-         return "¡Empate!";
-      }
-      if (
-         (player1Choice === "piedra" && player2Choice === "tijeras") ||
-         (player1Choice === "papel" && player2Choice === "piedra") ||
-         (player1Choice === "tijeras" && player2Choice === "papel")
-      ) {
-         return "¡Jugador 1 gana!";
+   // Verifica si el jugador puede hacer una apuesta
+   function checkBettingAbility() {
+      if (playerBalance < MINIMUM_BALANCE) {
+         placeBetButton.disabled = true;
+         resultDiv.textContent =
+            "No tienes suficiente saldo para jugar. Recarga tu saldo.";
       } else {
-         return "¡Jugador 2 gana!";
+         placeBetButton.disabled = false;
       }
    }
+
+   updateBalance();
 
    placeBetButton.addEventListener("click", () => {
       const betValue = parseFloat(betInput.value);
@@ -59,39 +97,52 @@ document.addEventListener("DOMContentLoaded", () => {
          }
 
          const playerChoice = button.getAttribute("data-choice");
-         socket.send(playerChoice); // Enviar la elección al servidor
+         sendChoice(playerChoice);
       });
    });
 
-   socket.addEventListener("message", (event) => {
-      const opponentChoice = event.data;
+   reloadBalanceButton.addEventListener("click", () => {
+      playerBalance += RELOAD_AMOUNT;
+      updateBalance();
+      resultDiv.textContent = `Tu saldo ha sido recargado con $${RELOAD_AMOUNT}.`;
+   });
 
-      if (opponentChoice === "Esperando a otro jugador...") {
-         resultDiv.textContent = opponentChoice;
-      } else {
-         const playerChoice = document
-            .querySelector(".choice.selected")
-            .getAttribute("data-choice");
-         const result = playGame(playerChoice, opponentChoice);
+   function sendChoice(choice) {
+      playerChoice = choice;
+      socket.send(JSON.stringify({ playerId, choice }));
+      checkGameResult();
+   }
 
-         if (result.includes("Jugador 1")) {
+   function checkGameResult() {
+      if (playerChoice && opponentChoice) {
+         const result = playGame(playerId, playerChoice, opponentChoice);
+
+         if (result.includes("gana")) {
             playerBalance += playerBet; // Gana el jugador
-         } else if (result.includes("Jugador 2")) {
+         } else if (result.includes("pierde")) {
             playerBalance -= playerBet; // Pierde el jugador
          }
 
-         resultDiv.textContent = `Tu elección: ${playerChoice}, Oponente: ${opponentChoice}. ${result}`;
          updateBalance(); // Actualiza el saldo después del juego
-         playerBet = 0; // Reinicia la apuesta para la próxima ronda
-         betInput.value = "";
+         resultDiv.textContent = result; // Mostrar resultado del juego
+         resetGame(); // Reiniciar juego para la siguiente ronda
+      } else if (playerChoice) {
+         resultDiv.textContent = "Esperando la elección del oponente...";
+      }
+   }
+
+   socket.addEventListener("open", () => {
+      console.log("Conectado al servidor WebSocket");
+   });
+
+   socket.addEventListener("message", (event) => {
+      const message = JSON.parse(event.data);
+      if (message.playerId && !playerId) {
+         playerId = message.playerId;
+         console.log(`Tu ID de jugador es: ${playerId}`);
+      } else if (message.choice && message.playerId !== playerId) {
+         opponentChoice = message.choice;
+         checkGameResult();
       }
    });
-
-   reloadBalanceButton.addEventListener("click", () => {
-      playerBalance += 500;
-      updateBalance();
-      resultDiv.textContent = `Tu saldo ha sido recargado con $500.`;
-   });
-
-   updateBalance();
 });

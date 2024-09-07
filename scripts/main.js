@@ -118,17 +118,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function checkGameResult() {
-    if (playerChoice && opponentChoice) {
-      if (gameResult.includes("gana")) {
-        playerBalance += playerBet; // Sumar la apuesta si gana el jugador
-      } else if (gameResult.includes("pierde")) {
-        playerBalance -= playerBet; // Restar la apuesta si pierde el jugador
-      }
-
-      updateBalance(); // Actualiza el saldo después del juego
-      resultDiv.textContent = gameResult; // Mostrar el resultado del juego
-      resetGame(); // Reiniciar el juego para la siguiente ronda
+    if (gameResult.includes("gana")) {
+      playerBalance += playerBet; // Suma la apuesta si gana el jugador
+    } else if (gameResult.includes("pierde")) {
+      playerBalance -= playerBet; // Resta la apuesta si pierde el jugador
     }
+
+    updateBalance(); // Actualiza el saldo después del juego
+    resultDiv.textContent = gameResult; // Mostrar el resultado del juego
+    resetGame(); // Reiniciar juego para la siguiente ronda
   }
 
   socket.addEventListener("open", () => {
